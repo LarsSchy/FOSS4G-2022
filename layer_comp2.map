@@ -1,0 +1,523 @@
+MAP
+	#
+	# layer_comp.map
+	#
+	# Lars Schylberg, 2022-02-23
+	#
+	# Testing "Chainable Compositing Filters" from RFC113
+	#
+	# Test command: map2img -m layer_comp.map -o layer_comp.png
+	# tested with: MapServer version 7.7-dev, but should work with 7.4 and 7.6
+	#
+	# documentation from mapservers-users list
+#
+#  COMPFILTER
+# The currently available filters are:
+# - "blur(integer)"
+# - "translate(integer,integer)"
+# - "grayscale()"
+# - "blacken()"
+# - "whiten()"
+# 
+# The COMPOP values that can be used should be explicit 
+# and are listed here:
+# clear
+# color-burn
+# color-dodge
+# contrast*
+# darken
+# difference
+# dst
+# dst-atop
+# dst-in
+# dst-out
+# dst-over
+# exclusion
+# hard-light
+# invert*
+# invert-rgb*
+# lighten
+# minus*
+# multiply
+# overlay
+# plus
+# screen
+# soft-light
+# src
+# src-atop
+# src-in
+# src-out
+# src-over
+# xor
+
+# Operators marked with a star (*) will only 
+# be supported when using an AGG backends and 
+# when pixman support is not enabled, 
+# and will fall back to “src-over” when this is not the case.
+#
+	
+	
+    NAME test_layer_comppipeline
+    EXTENT 0 0 20 15
+    SIZE 400 300
+    UNITS DD
+    IMAGECOLOR 200 200 200
+#     CONFIG "MS_ERRORFILE" "/tmp/test.log"
+    DEBUG 5
+
+    OUTPUTFORMAT
+      NAME "AGG"
+      DRIVER AGG/PNG
+      IMAGEMODE RGB
+    END
+
+    WEB
+      IMAGEPATH "/tmp/ms_tmp/"
+      IMAGEURL "/ms_tmp/"
+      METADATA
+        "wms_srs" "EPSG:3006 EPSG:4326 EPSG:3857"
+        "ows_enable_request" "*"
+        "ows_title" " test"
+      END
+    END
+
+    PROJECTION
+      "init=epsg:4326"
+    END
+
+	SYMBOL
+		NAME "Tree"
+		TYPE VECTOR
+		POINTS
+		  5 0
+		  4 0
+		  3 1
+		  3 2
+		  0 5
+		  0 7
+		  1 8
+		  8 8
+		  9 7
+		  9 5
+		  6 2
+		  6 1
+		  5 0
+		  -99 -99
+		  4 7
+		  4 12
+		  5 12
+		  5 7
+		END
+	END
+
+  SYMBOL
+    NAME "Grass"
+    TYPE VECTOR
+    POINTS
+      0 2
+      1 3
+      -99 -99
+      1 0
+      3 2
+      3 3
+      -99 -99
+      7 0
+      5 2
+      5 3
+      -99 -99
+      8 2
+      7 3
+      -99 -99
+      8 10
+      9 11
+      -99 -99
+      9 8
+      11 10
+      11 11
+      -99 -99
+      15 8
+      13 10
+      13 11
+      -99 -99
+      16 10
+      15 11
+      -99 -99
+      17 13
+    END
+  END  
+
+SYMBOL
+  NAME "diag_dots"
+  TYPE vector
+  FILLED true
+  POINTS
+    # Central circle:
+    0.7450    0.4500
+    0.7365    0.5147
+    0.7115    0.5750
+    0.6718    0.6268
+    0.6200    0.6665
+    0.5597    0.6915
+    0.4950    0.7000
+    0.4303    0.6915
+    0.3700    0.6665
+    0.3182    0.6268
+    0.2785    0.5750
+    0.2535    0.5147
+    0.2450    0.4500
+    0.2535    0.3853
+    0.2785    0.3250
+    0.3182    0.2732
+    0.3700    0.2335
+    0.4303    0.2085
+    0.4950    0.2000
+    0.5597    0.2085
+    0.6200    0.2335
+    0.6718    0.2732
+    0.7115    0.3250
+    0.7365    0.3853
+    0.7450    0.4500
+    -99 -99
+    0.25      0.0
+    0.2415    0.0647
+    0.2165    0.1250
+    0.1768    0.1768
+    0.1250    0.2165
+    0.0647    0.2415
+    0.0       0.25
+    0.0       0.0
+    0.25      0.0
+    -99 -99
+    1 0.25
+    0.9252    0.2415
+    0.8649    0.2165
+    0.8132    0.1768
+    0.7734    0.1250
+    0.7485    0.0647
+    0.74      0.0
+    1 0.0
+    1 0.25
+    -99 -99
+    0.74      1
+    0.7485    0.9252
+    0.7734    0.8649
+    0.8132    0.8132
+    0.8649    0.7734
+    0.9252    0.7485
+    1 0.74
+    1 1
+    0.74      1
+    -99 -99
+    0.0       0.74
+    0.0647    0.7485
+    0.1250    0.7734
+    0.1768    0.8132
+    0.2165    0.8649
+    0.2415    0.9252
+    0.25      1
+    0.0       1
+    0.0       0.74
+  END
+END
+
+# Start of layer definitions
+#
+    LAYER
+        NAME "lake"
+        TYPE POLYGON
+        FEATURE POINTS 10 5 15 10 5 10 10 5 END END
+        STATUS ON
+		COMPOSITE
+			#first we render normal water color
+			# OPACITY 100
+		END
+		COMPOSITE
+			COMPFILTER "whiten()"
+			COMPFILTER "blur(10)"
+			COMPOP "soft-light"
+			OPACITY 50
+		END
+		CLASS
+			STYLE
+				COLOR 156 192 249  # watercolor
+			END
+		END	
+    END # Layer
+
+    LAYER
+        NAME "house"
+        TYPE POLYGON
+        FEATURE POINTS 4 5 4 6 5 6 5 5 4 5 END END
+        STATUS ON
+		COMPOSITE
+			#create the shadow/blur effect by translating a blurred version of the layer
+			COMPFILTER "grayscale()"
+			COMPFILTER "translate(5,5)"
+			COMPFILTER "blur(4)"
+			OPACITY 50
+		END
+		COMPOSITE
+			# and render the buildings themselves
+			OPACITY 100
+		END
+		CLASS
+			STYLE
+				COLOR 128 128 128
+				OUTLINECOLOR 0 0 0
+				WIDTH 1
+			END
+		END
+    END # Layer
+    
+    LAYER
+        NAME "line-test"
+        TYPE LINE
+        FEATURE POINTS 14 5 18 10 END END
+        STATUS ON
+		COMPOSITE
+			#create the shadow/blur effect by translating a blurred version of the layer
+			# COMPFILTER "grayscale()"
+			COMPFILTER "translate(5,5)"
+			COMPFILTER "blur(5)"
+			OPACITY 50
+		END
+		COMPOSITE
+			OPACITY 100
+		END
+		CLASS
+			STYLE
+				COLOR 225 95 31
+				WIDTH 2
+			END
+		END
+    END # Layer
+
+    LAYER
+        NAME "line-test2"
+        TYPE LINE
+        FEATURE POINTS 3 2 17 2 END END
+        STATUS ON
+		CLASS
+			STYLE
+				COLOR 225 95 31
+				WIDTH 3
+				LINECAP round
+			END
+		END
+    END # Layer
+
+    LAYER
+        NAME "line-test3"
+        TYPE LINE
+        FEATURE POINTS 3 3 17 3 END END
+        STATUS ON
+		COMPOSITE
+			COMPFILTER "translate(3,3)"
+			COMPFILTER "blur(3)"
+			COMPOP "hard-light"
+			OPACITY 30
+		END
+		COMPOSITE
+			COMPFILTER "translate(-3,3)"
+			COMPFILTER "blur(3)"
+			OPACITY 30
+		END
+		COMPOSITE
+			COMPFILTER "translate(-3,-3)"
+			COMPFILTER "blur(3)"
+			OPACITY 30
+		END
+		COMPOSITE
+			COMPFILTER "translate(3,-3)"
+			COMPFILTER "blur(3)"
+			OPACITY 30
+		END
+		COMPOSITE
+			OPACITY 100
+		END
+		CLASS
+			STYLE
+				COLOR 225 95 31
+				WIDTH 3
+				LINECAP round
+			END
+		END
+    END # Layer
+
+
+    LAYER
+        NAME "line-border"
+        TYPE LINE
+        FEATURE POINTS 1 1 1 14 19 14 19 1 1 1 END END
+        STATUS ON
+		COMPOSITE
+			COMPFILTER "translate(4,4)"
+			COMPFILTER "blur(5)"
+			OPACITY 30
+		END
+		COMPOSITE
+			COMPFILTER "translate(-4,4)"
+			COMPFILTER "blur(5)"
+			OPACITY 30
+		END
+		COMPOSITE
+			COMPFILTER "translate(-4,-4)"
+			COMPFILTER "blur(5)"
+			OPACITY 30
+		END
+		COMPOSITE
+			COMPFILTER "translate(4,-4)"
+			COMPFILTER "blur(5)"
+			OPACITY 30
+		END
+		COMPOSITE
+			OPACITY 100
+		END
+		CLASS
+			STYLE
+				COLOR 190 90 190
+				WIDTH 3
+				PATTERN 2 5 7 5 END
+			END
+		END
+    END # Layer
+
+    LAYER
+        NAME "point-symbol-test"
+        TYPE POINT
+        FEATURE POINTS 3 10 END END
+        STATUS ON
+		COMPOSITE
+			#create the shadow/blur effect by translating a blurred version of the layer
+			COMPFILTER "blacken()"
+			COMPFILTER "translate(-6,-5)"
+			COMPFILTER "blur(7)"
+			OPACITY 50
+		END
+		COMPOSITE
+			OPACITY 100
+		END
+		CLASS
+			STYLE
+				SYMBOL "Tree"
+				SIZE 24
+				COLOR 5 255 10
+				WIDTH 2
+			END
+		END
+    END # Layer
+        
+    LAYER
+		NAME "inline_circles"
+		TYPE CIRCLE
+		STATUS ON
+		FEATURE
+			POINTS 7 10.5 10 13.5 END
+		END
+		COMPOSITE
+			#create the shadow/blur effect by translating a blurred version of the layer
+			COMPFILTER "blacken()"
+			COMPFILTER "translate(-6,-5)"
+			COMPFILTER "blur(7)"
+			OPACITY 50
+		END
+		COMPOSITE
+			OPACITY 100
+		END
+		  CLASS
+			STYLE
+			  COLOR  255 230 51
+			  SYMBOL "diag_dots"
+			  SIZE 12
+			END # STYLE
+		  END # CLASS
+	END
+       
+    LAYER
+		NAME "poly-fill-test"
+		TYPE POLYGON
+		STATUS ON
+		FEATURE
+			POINTS 12 10.5 12 13.5 18 13.5 18 10.5 12 10.5  END
+		END
+		
+	   CLASS
+			STYLE
+				COLOR "#fffff0"
+			END # STYLE
+		END # CLASS
+
+	END    
+ 
+	LAYER
+        NAME "text"
+        TYPE POINT
+        FEATURE POINTS 10 8 END TEXT "Happy Easter" END
+        STATUS ON
+        LABELCACHE OFF
+		COMPOSITE
+			# COMPFILTER "whiten()"
+			COMPFILTER "blur(3)"
+			COMPFILTER "grayscale()"
+			COMPFILTER "translate(3,3)"
+			COMPOP "multiply"
+			OPACITY 70
+		END
+		COMPOSITE
+			OPACITY 100
+			COMPOP "multiply"
+			COMPFILTER "translate(0,-3)"
+		END
+		CLASS
+			LABEL
+				COLOR 255 0 0
+				SIZE 15
+				WRAP " "
+				# ANGLE AUTO
+				# POSITION CC
+				# FORCE TRUE
+			END
+			#STYLE
+				
+				#COLOR 156 192 249  # watercolor
+			#END
+		END	
+    END # Layer 
+        
+    LAYER
+		NAME "poly-fill-test"
+		TYPE POLYGON
+		STATUS ON
+		FEATURE
+			POINTS 12 10.5 12 13.5 18 13.5 18 10.5 12 10.5  END
+		END
+		
+	   #CLASS
+			#STYLE
+				#COLOR 100 100 100
+			#END # STYLE
+		#END # CLASS
+		
+		COMPOSITE
+			OPACITY 100
+		END
+		COMPOSITE
+			#create the shadow/blur effect by translating a blurred version of the layer
+			COMPFILTER "grayscale()"
+			COMPFILTER "blacken()"
+			COMPFILTER "translate(2,-2)"
+			COMPFILTER "blur(3)"
+			OPACITY 50
+		END
+
+		CLASS
+			STYLE
+				COLOR 5 255 10
+				WIDTH 0.8
+				SYMBOL "Grass"
+				SIZE 20
+			END # STYLE
+
+		END # CLASS
+	END    
+END # Map File
